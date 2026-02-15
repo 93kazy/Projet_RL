@@ -1,0 +1,32 @@
+import gymnasium as gym
+import ale_py
+from stable_baselines3 import DQN
+from stable_baselines3.common.vec_env import VecFrameStack,DummyVecEnv
+from stable_baselines3.common.atari_wrappers import AtariWrapper
+
+gym.register_envs(ale_py)
+MODEL = "DQN_assault" 
+env = gym.make("ALE/Assault-v5", frameskip=1,render_mode= "human")
+env = AtariWrapper(env, terminal_on_life_loss=False, clip_reward=False)
+env = DummyVecEnv([lambda: env])
+env = VecFrameStack(env, n_stack=4)
+
+try:
+    model = DQN.load(MODEL)
+except FileNotFoundError:
+    print("Erreur : le fichier est introuvable.")
+    exit()
+
+nb = 20
+scores = []
+
+for i in range(nb):
+    obs = env.reset()
+    done = False
+    score_partie = 0
+    while not done:
+        action, _ = model.predict(obs, deterministic=True)
+        obs, rewards, done, info = env.step(action)
+        score_partie += rewards[0]
+    scores.append(score_partie)
+    print("Score de la partie : ", score_partie)
